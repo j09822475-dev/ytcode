@@ -1,33 +1,26 @@
 # Скопируйте в trendbot.toml и настройте под свою нишу.
+
 [channel]
 niche = "лайфхаки для продуктивности и учёбы"
 language = "ru"
-audience = "студенты и молодые специалисты 18-30"
-tone = "дружелюбный, быстрый, с юмором"
-region = "RU"
 
-[claude]
-model = "claude-opus-5"
-effort = "high"
+[collect]
+# Ключевые слова и хэштеги ниши: по ним открываются поиск и страницы хэштегов.
+keywords = ["продуктивность", "лайфхак учеба"]
+hashtags = ["лайфхак", "продуктивность"]
+feed_videos = 40          # сколько роликов просмотреть в ленте «Для вас» за запуск
+search_scrolls = 4        # сколько раз прокрутить выдачу поиска / хэштега
+watch_seconds = [3, 8]    # сколько секунд «смотреть» каждый ролик в ленте (случайно в диапазоне)
+pause_seconds = [2, 5]    # пауза между действиями
+headless = false          # браузер видно на экране; можно вмешаться (капча, вход)
+browser_channel = ""      # "chrome" — использовать установленный Google Chrome вместо Chromium от Playwright
+sound_pages = 5           # сколько страниц самых частых звуков открыть, чтобы замерить число роликов с ними
 
-[sources]
-# creative_center — публичные тренды TikTok Creative Center (неофициально, может ломаться)
-# research_api   — официальный Research API (нужен доступ)
-# manual         — ручной импорт JSON-файлов из data/manual_trends/
-enabled = ["manual", "creative_center"]
-creative_center_country = "RU"
-creative_center_period_days = 7
+[trends]
+lookback_hours = 72       # «свежими» считаются ролики не старше этого
+min_videos_per_sound = 2  # звук/хэштег попадает в отчёт, если встречен хотя бы в N роликах
+top_n = 15
 
-[render]
-width = 1080
-height = 1920
-font = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-tts = "none"            # none | edge
-tts_voice = "ru-RU-SvetlanaNeural"
-
-[publish]
-mode = "inbox"          # inbox — черновик в приложении TikTok (рекомендуется); direct — прямая публикация
-privacy_level = "SELF_ONLY"  # до аудита приложения TikTok разрешает только SELF_ONLY
-require_approval = true
-max_posts_per_day = 2
-label_ai_generated = true
+[frames]
+top_videos = 8            # у скольких лучших роликов снимать кадры
+timestamps = [0.5, 2.5, 6.0]
