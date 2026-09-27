@@ -1,0 +1,33 @@
+# Скопируйте в trendbot.toml и настройте под свою нишу.
+[channel]
+niche = "лайфхаки для продуктивности и учёбы"
+language = "ru"
+audience = "студенты и молодые специалисты 18-30"
+tone = "дружелюбный, быстрый, с юмором"
+region = "RU"
+
+[claude]
+model = "claude-opus-5"
+effort = "high"
+
+[sources]
+# creative_center — публичные тренды TikTok Creative Center (неофициально, может ломаться)
+# research_api   — официальный Research API (нужен доступ)
+# manual         — ручной импорт JSON-файлов из data/manual_trends/
+enabled = ["manual", "creative_center"]
+creative_center_country = "RU"
+creative_center_period_days = 7
+
+[render]
+width = 1080
+height = 1920
+font = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+tts = "none"            # none | edge
+tts_voice = "ru-RU-SvetlanaNeural"
+
+[publish]
+mode = "inbox"          # inbox — черновик в приложении TikTok (рекомендуется); direct — прямая публикация
+privacy_level = "SELF_ONLY"  # до аудита приложения TikTok разрешает только SELF_ONLY
+require_approval = true
+max_posts_per_day = 2
+label_ai_generated = true

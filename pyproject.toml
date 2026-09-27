@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trendbot"
+version = "0.1.0"
+description = "Эксперимент: поиск трендов TikTok, генерация похожего контента и ведение канала"
+requires-python = ">=3.10"
+dependencies = [
+  "anthropic>=1.8",
+  "pydantic>=2",
+  "requests>=2.31",
+  "pillow>=10",
+  "imageio-ffmpeg>=0.5",
+]
+
+[project.optional-dependencies]
+tts = ["edge-tts>=6"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+trendbot = "trendbot.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["trendbot*"]
