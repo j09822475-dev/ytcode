@@ -38,6 +38,9 @@
 
 ## Установка (на вашем компьютере)
 
+Подробная пошаговая инструкция для Windows/macOS/Linux и работы с Claude Code —
+[`docs/SETUP.md`](docs/SETUP.md). Коротко:
+
 ```bash
 git clone <этот репозиторий> && cd ytcode
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
@@ -56,7 +59,7 @@ trendbot collect --feed 30
 trendbot report --frames
 ```
 
-Проще всего — открыть папку в Claude Code и написать: «найди тренды». Claude сам
+Проще всего — открыть папку в Claude Code и написать `/find-trends` или «найди тренды». Claude сам
 запустит сбор, прочитает отчёт и сделает разбор.
 
 Запускайте сбор 1–3 раза в день: колонка «прирост роликов/час» считается между запусками —

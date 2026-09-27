@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(trendbot login)",
+      "Bash(trendbot collect:*)",
+      "Bash(trendbot report:*)",
+      "Bash(trendbot run:*)",
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)"
+    ],
+    "deny": [
+      "Read(data/browser-profile/**)"
+    ]
+  }
+}

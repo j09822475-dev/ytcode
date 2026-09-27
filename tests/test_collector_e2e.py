@@ -64,6 +64,8 @@ def make_handler(video_file):
                 self.send("<html>" + rehydrate(challenge_detail("study", 1234, 99_000)) + SCROLL_JS + "</html>")
             elif p.startswith("/music/"):
                 self.send("<html>" + rehydrate(music_detail(p.split("-")[-1], "Hot", 4321)) + "</html>")
+            elif p == "/login":  # «человек» входит через полсекунды
+                self.send("<html><script>setTimeout(() => document.cookie = 'sessionid=abc; path=/', 500)</script></html>")
             elif "/video/" in p:
                 self.send('<html><body><video src="/clip.webm" muted preload="auto" width="360" height="640"></video></body></html>')
             elif p == "/clip.webm" and video_file:
@@ -91,7 +93,8 @@ def site(tmp_path_factory):
     server.shutdown()
 
 
-def test_collect_run_and_frames(site, tmp_path):
+def test_collect_run_and_frames(site, tmp_path, monkeypatch):
+    monkeypatch.setenv("TRENDBOT_DUMP", "1")
     base, video_file = site
     cfg = Config(keywords=["учёба"], hashtags=["study"], feed_videos=3, search_scrolls=2,
                  watch_seconds=(0.3, 0.4), pause_seconds=(0.3, 0.4), headless=True,
@@ -108,7 +111,20 @@ def test_collect_run_and_frames(site, tmp_path):
         sounds = store.db.execute("SELECT sound_id, video_count FROM sound_snapshots").fetchall()
         assert ("hot", 4321) in [tuple(s) for s in sounds]  # страница частого звука открыта
 
+        raw = [p.name for p in (tmp_path / "raw").iterdir()]
+        assert any("api_recommend_item_list" in n and n.endswith(".json") for n in raw)
+        assert any(n.endswith(".html") for n in raw)
+
         if video_file:
             shots = c.frames(base + "/@alice/video/1", tmp_path / "frames")
             assert len(shots) == 2 and all(s.stat().st_size > 1000 for s in shots)
             assert shots[0].read_bytes() != shots[1].read_bytes()  # кадры действительно из разных моментов
+
+
+def test_login_waits_for_session_cookie(site, tmp_path):
+    base, _ = site
+    cfg = Config(headless=True, data_dir=tmp_path, pause_seconds=(0.1, 0.1))
+    with Collector(cfg, Store(cfg.db_path), base, log=lambda *_: None) as c:
+        assert not c.is_logged_in()
+        assert c.login(timeout_minutes=0.5)
+        assert c.is_logged_in()

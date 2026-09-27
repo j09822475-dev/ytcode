@@ -16,7 +16,8 @@ def _collector(cfg: Config, store: Store, base_url: str | None):
 
 def cmd_login(cfg, store, args):
     with _collector(cfg, store, args.base_url) as c:
-        c.login()
+        if not c.login():
+            raise SystemExit(1)
 
 
 def cmd_collect(cfg, store, args):

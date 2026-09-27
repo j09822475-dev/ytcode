@@ -9,8 +9,10 @@ JSON, который сайт сам загружает в браузер. Ка�
 
 from __future__ import annotations
 
+import json
 import os
 import random
+import re
 import time
 from pathlib import Path
 from urllib.parse import quote, urlparse
@@ -41,6 +43,8 @@ SEEK_JS = """async ([el, t]) => {
     }
     return el.currentTime;
 }"""
+# Cookie, которые TikTok ставит после входа (любой из них означает, что сессия есть).
+SESSION_COOKIES = {"sessionid", "sessionid_ss", "sid_tt"}
 CAPTCHA_SELECTORS = ["#captcha-verify-container", "#captcha_container", "div[class*='captcha']"]
 
 
@@ -51,6 +55,7 @@ class Collector:
         self.base = base_url.rstrip("/")
         self.log = log
         self.buffer = Extracted()
+        self._dumped = 0
         self._pw = None
         self.ctx: BrowserContext | None = None
         self.page: Page | None = None
@@ -85,15 +90,30 @@ class Collector:
         if "/api/" not in response.url or "json" not in (response.headers.get("content-type") or ""):
             return
         try:
-            self.buffer.extend(extract(response.json()))
+            payload = response.json()
         except Exception:  # тело недоступно (редирект, обрыв) — просто пропускаем
-            pass
+            return
+        self._dump(urlparse(response.url).path, json.dumps(payload, ensure_ascii=False), "json")
+        self.buffer.extend(extract(payload))
 
     def _capture_html(self) -> None:
         try:
-            self.buffer.extend(extract_from_html(self.page.content()))
+            html = self.page.content()
         except Exception:
-            pass
+            return
+        self._dump(urlparse(self.page.url).path, html, "html")
+        self.buffer.extend(extract_from_html(html))
+
+    def _dump(self, path: str, body: str, ext: str) -> None:
+        """Режим отладки (TRENDBOT_DUMP=1): сырые ответы сайта в data/raw/ — чтобы чинить
+        парсер по реальным данным, когда TikTok меняет формат."""
+        if not os.environ.get("TRENDBOT_DUMP"):
+            return
+        raw_dir = self.cfg.data_dir / "raw"
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        self._dumped += 1
+        name = re.sub(r"[^\w.-]+", "_", path.strip("/"))[:80] or "root"
+        (raw_dir / f"{int(time.time())}_{self._dumped:04d}_{name}.{ext}").write_text(body, encoding="utf-8")
 
     def _flush(self, source: str) -> None:
         # Ответ на последнее действие может ещё идти: даём ему прийти и обработаться.
@@ -133,9 +153,26 @@ class Collector:
 
     # --- сценарии -------------------------------------------------------------------
 
-    def login(self) -> None:
+    def is_logged_in(self) -> bool:
+        return any(c["name"] in SESSION_COOKIES for c in self.ctx.cookies())
+
+    def login(self, timeout_minutes: float = 15) -> bool:
+        """Открывает страницу входа и ждёт, пока человек войдёт (появится cookie сессии).
+        Ввод в терминале не нужен, поэтому команду можно запускать из Claude Code."""
+        if self.is_logged_in():
+            self.log("Вход уже выполнен.")
+            return True
         self.page.goto(self.base + "/login")
-        input("Войдите в TikTok в открывшемся окне, затем нажмите Enter здесь… ")
+        self.log("Войдите в TikTok в открывшемся окне браузера — жду…")
+        deadline = time.time() + timeout_minutes * 60
+        while time.time() < deadline:
+            if self.is_logged_in():
+                self.page.wait_for_timeout(3000)  # даём сайту дописать остальные cookie
+                self.log("Вход выполнен, сессия сохранена в профиле браузера.")
+                return True
+            self.page.wait_for_timeout(2000)
+        self.log("Не дождался входа. Запустите `trendbot login` ещё раз.")
+        return False
 
     def feed(self, videos: int) -> None:
         self.log(f"Лента «Для вас»: {videos} роликов")
